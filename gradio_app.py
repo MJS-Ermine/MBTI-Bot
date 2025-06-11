@@ -2,6 +2,10 @@ import gradio as gr
 import requests
 
 API_BASE = "https://zwsmvt-8000.csb.app"
+MBTI_LIST = [
+    "INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP",
+    "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"
+]
 
 def recommend(mbti: str) -> str:
     resp = requests.post(f"{API_BASE}/api/recommend", json={"mbti": mbti})
@@ -26,7 +30,7 @@ def avatar(mbti: str):
 def main():
     with gr.Blocks() as demo:
         gr.Markdown("# MBTI 伴侶聊天機器人 Demo")
-        mbti = gr.Textbox(label="你的MBTI (如 INTJ)")
+        mbti = gr.Dropdown(choices=MBTI_LIST, label="你的MBTI")
         msg = gr.Textbox(label="你想說的話")
         recommend_out = gr.Textbox(label="推薦結果")
         chat_out = gr.Textbox(label="AI回覆")
