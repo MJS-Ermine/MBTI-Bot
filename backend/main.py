@@ -6,6 +6,7 @@ import requests
 import base64
 import threading
 import os
+import traceback
 
 app = FastAPI()
 
@@ -90,7 +91,16 @@ def generate_avatar(req: AvatarRequest):
     }
     try:
         resp = requests.post(SH_API_URL, json=payload, headers=headers, timeout=60)
-        resp.raise_for_status()
+        print("Stable Horde 回傳：", resp.text)
+        try:
+            resp.raise_for_status()
+        except Exception as e:
+            print("模型 counterfeit-v30 失敗，嘗試不指定模型 fallback...")
+            # fallback: 不指定模型
+            payload.pop("models", None)
+            resp = requests.post(SH_API_URL, json=payload, headers=headers, timeout=60)
+            print("Stable Horde fallback 回傳：", resp.text)
+            resp.raise_for_status()
         data = resp.json()
         # Stable Horde 回傳 job id，需再 poll 結果
         job_id = data.get("id")
@@ -109,4 +119,5 @@ def generate_avatar(req: AvatarRequest):
             import time; time.sleep(2)
         raise HTTPException(status_code=500, detail="Stable Horde 生成逾時")
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e)) 
