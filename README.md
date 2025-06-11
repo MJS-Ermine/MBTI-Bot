@@ -1,59 +1,73 @@
-# 未來伴侶聊天機器人（MBTI Bot）
+# MBTI 伴侶聊天機器人
 
-## 專案結構
+## 專案簡介
 
+本專案為一個雲端可展示的 AI 聊天/圖片生成後端，支援：
+- MBTI 伴侶推薦
+- OpenRouter.ai 聊天（LLM）
+- Stable Horde 免費動漫頭像生成
+- Gradio 前端互動展示（無需 JS/React）
+
+## 1. 安裝依賴
+
+```bash
+pip install -r requirements.txt
 ```
-/
-├── frontend/           # React (Vite) 前端
-│   ├── public/
-│   │   └── avatars/    # 16 張 MBTI 預設圖（請放在這裡）
-│   └── src/
-├── backend/            # FastAPI 後端
-│   ├── main.py         # FastAPI 主程式
-│   └── requirements.txt
-└── README.md           # 專案說明
+
+## 2. 設定環境變數
+
+請先至 [OpenRouter.ai](https://openrouter.ai/) 申請 API Key。
+
+- 在本地：
+  ```bash
+  export OPENROUTER_API_KEY=你的token
+  # 或於 .env 檔加入 OPENROUTER_API_KEY=你的token
+  ```
+- 在 CodeSandbox/Replit：
+  於「環境變數」介面新增 `OPENROUTER_API_KEY`，值為你的 token，並重啟伺服器。
+
+Stable Horde 圖片生成已內建公開測試 key，無需註冊。
+
+## 3. 啟動 FastAPI 後端
+
+```bash
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## 在 CodeSandbox 運行
+- API 文件（Swagger UI）：
+  - 本地： http://localhost:8000/docs
+  - 雲端： https://<你的-sandbox-id>-8000.csb.app/docs
 
-1. 開啟 CodeSandbox，選擇 "Node + Python" 或 "Container" 模板。
-2. 將本專案上傳或 clone。
-3. 進入 `backend/`，安裝依賴：
-   ```bash
-   pip install -r requirements.txt
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   ```
-4. 進入 `frontend/`，安裝依賴並啟動：
-   ```bash
-   npm install
-   npm run dev
-   ```
-5. 前端會自動 proxy `/api` 請求到 FastAPI。
+## 4. 啟動 Gradio 前端互動 Demo
 
-## Avatar 圖片（AI 動漫風格自動生成）
-- 系統會自動根據 MBTI 產生動漫風格頭像，並快取每個 MBTI 對應圖片。
-- 無需手動上傳圖片。
+```bash
+python gradio_app.py
+```
+- CodeSandbox 會自動顯示 7860 埠口公開網址，所有人可用瀏覽器互動。
 
-## 聊天功能（HuggingFace 免費 API）
-- 請註冊 [HuggingFace](https://huggingface.co/) 並取得免費 API Token。
-- 編輯 `backend/main.py`，將 `hf_xxx` 替換為你的 Token。
-- 預設使用 `facebook/blenderbot-400M-distill` 模型，可根據需求更換。
+## 5. API 測試
 
-## HuggingFace API Token 取得與填寫
-1. 前往 [HuggingFace 官網](https://huggingface.co/) 註冊/登入帳號。
-2. 點右上角頭像 →「Settings」→「Access Tokens」。
-3. 點「New token」，名稱自訂，Role 選「Read」。
-4. 產生後複製 token（格式如 `hf_xxxxxxxxxxxxxxxxxxxxx`）。
-5. 編輯 `backend/main.py`，將所有 `hf_xxx` 替換為你的 Token，例如：
-   ```python
-   headers = {"Authorization": "Bearer hf_abcdefgh1234567890"}
-   ```
-6. 若遇到 token 失效、API 無回應，請重新產生 token 並確認帳號未被限制。
+- `/api/recommend`：推薦伴侶 MBTI
+- `/api/chat`：MBTI 風格聊天
+- `/api/avatar`：動漫頭像生成
 
-## 注意事項
-- CodeSandbox 有容量與運算限制，請壓縮圖片並避免放置大型檔案。
-- 若需本地 LLM（如 Ollama），請改於本地或雲端 VM 部署。
+可用 Swagger UI、curl、Postman 或 Gradio 前端測試。
+
+## 6. 常見問題
+
+- 404 Not Found：請確認訪問 `/docs` 或正確 API 路徑
+- 401/403：請檢查 `OPENROUTER_API_KEY` 是否正確
+- 500：請檢查 token 權限、API 配置，或貼上錯誤訊息協助排查
+
+## 7. 推送到 GitHub
+
+```bash
+git add requirements.txt gradio_app.py README.md
+# 如有其他異動一併加入
+git commit -m "feat: 新增 Gradio 前端與自動化說明，完善 requirements"
+git push
+```
 
 ---
 
-如有問題，請聯絡專案負責人。
+如需自動化測試腳本、API 範例、或遇到其他問題，請參考本 README 或聯絡專案協作者。
