@@ -26,14 +26,24 @@ def avatar(mbti: str):
     resp = requests.post(f"{API_BASE}/api/avatar", json={"mbti": mbti})
     if resp.ok:
         img_b64 = resp.json().get("avatar_base64", "")
-        if img_b64:
-            try:
-                img_bytes = base64.b64decode(img_b64)
-                img = Image.open(io.BytesIO(img_bytes))
-                return img
-            except Exception as e:
-                print("圖片解碼失敗：", e)
-                return None
+        print("base64前100字元：", img_b64[:100])
+        try:
+            img_bytes = base64.b64decode(img_b64)
+            print("bytes前20字元：", img_bytes[:20])
+            # 判斷常見圖片格式
+            if img_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+                print("偵測到 PNG 格式")
+            elif img_bytes[:3] == b'\xff\xd8\xff':
+                print("偵測到 JPEG 格式")
+            elif img_bytes[:4] == b'RIFF' and img_bytes[8:12] == b'WEBP':
+                print("偵測到 WEBP 格式 (PIL 需支援)")
+            else:
+                print("非標準圖片格式，header:", img_bytes[:12])
+            img = Image.open(io.BytesIO(img_bytes))
+            return img
+        except Exception as e:
+            print("圖片解碼失敗：", e)
+            return None
     return None
 
 def main():
