@@ -5,6 +5,7 @@ from typing import List, Dict
 import requests
 import base64
 import threading
+import os
 
 app = FastAPI()
 
@@ -44,40 +45,57 @@ def recommend_mbti(req: MBTIRequest) -> List[str]:
 
 @app.post("/api/chat")
 def chat_with_ai(req: ChatRequest):
-    """串接 HuggingFace 免費 LLM API 進行聊天"""
+    """串接 OpenRouter.ai 免費 LLM API 進行聊天"""
     prompt = f"你是一個{req.mbti}型人格的虛擬伴侶，請用該人格風格回應：{req.message}"
-    HF_API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
-    headers = {"Authorization": "Bearer hf_xxx"}  # 請填入你的 HuggingFace Token
-    payload = {"inputs": prompt}
+    OR_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+    OR_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+    headers = {"Authorization": f"Bearer {OR_API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "model": "openrouter/llama-2-13b-chat",
+        "messages": [{"role": "user", "content": prompt}]
+    }
     try:
-        resp = requests.post(HF_API_URL, headers=headers, json=payload, timeout=10)
+        resp = requests.post(OR_API_URL, headers=headers, json=payload, timeout=20)
         resp.raise_for_status()
         data = resp.json()
-        return {"reply": data.get("generated_text", "抱歉，目前無法回應。")}
+        reply = data.get("choices", [{}])[0].get("message", {}).get("content", "抱歉，目前無法回應。")
+        return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/avatar")
 def generate_avatar(req: AvatarRequest):
-    """根據 MBTI 產生動漫風格 avatar，並快取 base64 結果"""
+    """根據 MBTI 產生動漫風格 avatar，並快取 base64 結果 (Stable Horde)"""
     mbti = req.mbti.upper()
     with cache_lock:
         if mbti in avatar_cache:
             return {"mbti": mbti, "avatar_base64": avatar_cache[mbti]}
     prompt = MBTI_AVATAR_PROMPT.format(mbti=mbti)
-    HF_IMG_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
-    headers = {"Authorization": "Bearer hf_xxx"}  # 請填入你的 HuggingFace Token
-    payload = {"inputs": prompt}
+    SH_API_URL = "https://stablehorde.net/api/v2/generate/async"
+    headers = {"apikey": "0000000000", "Content-Type": "application/json"}  # 公開測試 key
+    payload = {
+        "prompt": prompt,
+        "params": {"n": 1, "width": 512, "height": 512}
+    }
     try:
-        resp = requests.post(HF_IMG_API_URL, headers=headers, json=payload, timeout=60)
+        resp = requests.post(SH_API_URL, json=payload, headers=headers, timeout=60)
         resp.raise_for_status()
-        if resp.headers.get("content-type", "").startswith("image"):
-            img_bytes = resp.content
-            img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-            with cache_lock:
-                avatar_cache[mbti] = img_b64
-            return {"mbti": mbti, "avatar_base64": img_b64}
-        else:
-            raise HTTPException(status_code=500, detail="圖片生成失敗: " + resp.text)
+        data = resp.json()
+        # Stable Horde 回傳 job id，需再 poll 結果
+        job_id = data.get("id")
+        if not job_id:
+            raise HTTPException(status_code=500, detail="Stable Horde 未回傳任務 ID")
+        # Poll 結果
+        poll_url = f"https://stablehorde.net/api/v2/generate/status/{job_id}"
+        for _ in range(30):  # 最多等 30 次
+            poll_resp = requests.get(poll_url, headers=headers, timeout=10)
+            poll_data = poll_resp.json()
+            if poll_data.get("done") and poll_data.get("generations"):
+                img_b64 = poll_data["generations"][0]["img"]
+                with cache_lock:
+                    avatar_cache[mbti] = img_b64
+                return {"mbti": mbti, "avatar_base64": img_b64}
+            import time; time.sleep(2)
+        raise HTTPException(status_code=500, detail="Stable Horde 生成逾時")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
