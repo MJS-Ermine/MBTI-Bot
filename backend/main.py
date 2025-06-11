@@ -22,7 +22,12 @@ MBTI_MATCH = {
     # ... 其餘 MBTI 配對 ...
 }
 
-MBTI_AVATAR_PROMPT = "anime style portrait, {mbti} personality, vibrant colors, upper body, detailed, trending on pixiv, masterpiece"
+MBTI_AVATAR_PROMPT = (
+    "anime style, beautiful portrait, {mbti} personality, highly detailed face, soft lighting, clear skin, beautiful eyes, upper body, masterpiece, trending on pixiv, best quality"
+)
+NEGATIVE_PROMPT = (
+    "deformed, ugly, extra limbs, bad anatomy, disfigured, poorly drawn face, mutated, out of frame, blurry, bad proportions, cloned face, malformed hands, missing arms, missing legs, extra arms, extra legs, mutated hands, fused fingers, too many fingers, long neck, scary, horror, creepy, distorted, grotesque, nsfw"
+)
 
 class MBTIRequest(BaseModel):
     mbti: str
@@ -75,7 +80,13 @@ def generate_avatar(req: AvatarRequest):
     headers = {"apikey": "0000000000", "Content-Type": "application/json"}  # 公開測試 key
     payload = {
         "prompt": prompt,
-        "params": {"n": 1, "width": 512, "height": 512}
+        "params": {
+            "n": 1,
+            "width": 512,
+            "height": 512,
+            "negative_prompt": NEGATIVE_PROMPT
+        },
+        "models": ["counterfeit-v30"]
     }
     try:
         resp = requests.post(SH_API_URL, json=payload, headers=headers, timeout=60)
