@@ -28,10 +28,13 @@ def main():
         gr.Markdown("# MBTI 伴侶聊天機器人 Demo")
         mbti = gr.Textbox(label="你的MBTI (如 INTJ)")
         msg = gr.Textbox(label="你想說的話")
+        recommend_out = gr.Textbox(label="推薦結果")
+        chat_out = gr.Textbox(label="AI回覆")
+        avatar_out = gr.Image(label="AI頭像")
         with gr.Row():
-            gr.Button("推薦伴侶MBTI").click(fn=recommend, inputs=mbti, outputs="text")
-            gr.Button("聊天").click(fn=chat, inputs=[mbti, msg], outputs="text")
-            gr.Button("生成頭像").click(fn=avatar, inputs=mbti, outputs="image")
+            gr.Button("推薦伴侶MBTI").click(fn=recommend, inputs=mbti, outputs=recommend_out)
+            gr.Button("聊天").click(fn=chat, inputs=[mbti, msg], outputs=chat_out)
+            gr.Button("生成頭像").click(fn=avatar, inputs=mbti, outputs=avatar_out)
     demo.launch(server_name="0.0.0.0", server_port=7860)
 
 if __name__ == "__main__":
