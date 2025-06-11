@@ -1,6 +1,8 @@
 import gradio as gr
 import requests
 import base64
+from PIL import Image
+import io
 
 API_BASE = "https://zwsmvt-8000.csb.app"
 MBTI_LIST = [
@@ -25,7 +27,13 @@ def avatar(mbti: str):
     if resp.ok:
         img_b64 = resp.json().get("avatar_base64", "")
         if img_b64:
-            return base64.b64decode(img_b64)
+            try:
+                img_bytes = base64.b64decode(img_b64)
+                img = Image.open(io.BytesIO(img_bytes))
+                return img
+            except Exception as e:
+                print("圖片解碼失敗：", e)
+                return None
     return None
 
 def main():
@@ -35,7 +43,7 @@ def main():
         msg = gr.Textbox(label="你想說的話")
         recommend_out = gr.Textbox(label="推薦結果")
         chat_out = gr.Textbox(label="AI回覆")
-        avatar_out = gr.Image(label="AI頭像")
+        avatar_out = gr.Image(label="AI頭像", type="pil")
         with gr.Row():
             gr.Button("推薦伴侶MBTI").click(fn=recommend, inputs=mbti, outputs=recommend_out)
             gr.Button("聊天").click(fn=chat, inputs=[mbti, msg], outputs=chat_out)
