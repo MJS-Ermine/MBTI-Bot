@@ -83,11 +83,11 @@ def generate_avatar(req: AvatarRequest):
         "prompt": prompt,
         "params": {
             "n": 1,
-            "width": 512,
+            "width": 384,
             "height": 512,
             "negative_prompt": NEGATIVE_PROMPT
-        },
-        "models": ["counterfeit-v30"]
+        }
+        # 不指定 models，讓平台自動分配
     }
     try:
         resp = requests.post(SH_API_URL, json=payload, headers=headers, timeout=60)
