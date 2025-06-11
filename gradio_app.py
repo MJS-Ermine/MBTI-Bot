@@ -1,5 +1,6 @@
 import gradio as gr
 import requests
+import base64
 
 API_BASE = "https://zwsmvt-8000.csb.app"
 MBTI_LIST = [
@@ -24,7 +25,7 @@ def avatar(mbti: str):
     if resp.ok:
         img_b64 = resp.json().get("avatar_base64", "")
         if img_b64:
-            return f"data:image/png;base64,{img_b64}"
+            return base64.b64decode(img_b64)
     return None
 
 def main():

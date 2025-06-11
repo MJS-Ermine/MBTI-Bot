@@ -51,7 +51,7 @@ def chat_with_ai(req: ChatRequest):
     OR_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
     headers = {"Authorization": f"Bearer {OR_API_KEY}", "Content-Type": "application/json"}
     payload = {
-        "model": "openrouter/llama-2-13b-chat",
+        "model": "openai/gpt-3.5-turbo",
         "messages": [{"role": "user", "content": prompt}]
     }
     try:
